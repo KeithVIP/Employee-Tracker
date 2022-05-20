@@ -580,5 +580,5 @@ function editEmployee() {
 
 function exit() {
   connection.end();
-  console.log("Have a good one!");
+  console.log("Disconnected");
 }
