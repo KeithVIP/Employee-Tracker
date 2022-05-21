@@ -1,17 +1,17 @@
 const mysql = require("mysql");
 const inquirer = require("inquirer");
 
-const connection = mysql.createConnection({
+const db = mysql.createConnection({
   host: "localhost",
-  port: 3301,
+  // port: 3001,
   user: "root",
   password: "Soulfonik",
-  database: "employeedb",
+  database: "employee_db",
 });
 
-connection.connect(function (err) {
+db.connect(function (err) {
   if (err) throw err;
-  console.log("Employee Tracker App");
+  console.log("Connected to the employee Tracker App");
   employeePrompt();
 });
 
@@ -58,7 +58,7 @@ function employeePrompt() {
 function viewDept() {
   let query = "SELECT department.dept_name AS departments FROM department;";
 
-  connection.query(query, function (err, res) {
+  db.query(query, function (err, res) {
     if (err) throw err;
     console.table(res);
     employeePrompt();
@@ -69,7 +69,7 @@ function viewRoles() {
   let query =
     "SELECT roles.title, roles.salary, department.dept_name AS department FROM roles INNER JOIN department ON department.id = roles.department_id;";
 
-  connection.query(query, function (err, res) {
+  db.query(query, function (err, res) {
     if (err) throw err;
     console.table(res);
     employeePrompt();
@@ -82,28 +82,30 @@ function viewEmployees() {
     "FROM employees " +
     "JOIN roles ON roles.id = employees.role_id " +
     "JOIN department ON roles.department_id = department.id " +
-    "ORDER BY employees.id;";
-  connection.query(query, function (err, res) {
+    "ORDER BY employees.id;"
+    ;
+  db.query(query, function (err, res) {
     if (err) throw err;
     for (i = 0; i < res.length; i++) {
       if (res[i].manager_id == 0) {
-        res[i].manager = "None";
-      } else {
-        res[i].manager =
-          res[res[i].manager_id - 1].first_name +
-          " " +
-          res[res[i].manager_id - 1].last_name;
+        res[i].manager = "None"
+      // } else {
+      //   res[i].manager =
+      //     res[res[i].manager_id - 1].first_name +
+      //     " " +
+      //     res[res[i].manager_id - 1].last_name;
+      // };
+      // delete res[i].manager_id;
       }
-      delete res[i].manager_id;
-    }
+    };
     console.table(res);
     employeePrompt();
   });
-}
+};
 
 function addDept() {
   let query = "SELECT department.dept_name FROM department;";
-  connection.query(query, function (err, res) {
+  db.query(query, function (err, res) {
     if (err) throw err;
     console.table(res);
 
@@ -119,7 +121,7 @@ function addDept() {
       console.log(answer);
 
       let query = "INSERT INTO department SET ?";
-      connection.query(
+      db.query(
         query,
         {
           dept_name: answer.new_department,
@@ -134,17 +136,17 @@ function addDept() {
           name: "again",
           type: "list",
           message: "Would you like to add another department?",
-          choices: ["Yes", "Exit"],
+          choices: ["Yes", "No"],
         },
       ];
 
       inquirer.prompt(addagainPrompt).then(function (answer) {
         let query = "SELECT department.dept_name FROM department";
-        connection.query(query, function (err, res) {
+        db.query(query, function (err, res) {
           if (err) throw err;
           if (answer.again == "Yes") {
             addDept();
-          } else if (answer.again == "Exit") {
+          } else if (answer.again == "No") {
             console.table(res);
             employeePrompt();
           }
@@ -157,17 +159,13 @@ function addDept() {
 function addRole() {
   let query1 =
     "SELECT roles.title AS roles, roles.salary, department.dept_name FROM roles INNER JOIN department ON department.id = roles.department_id;";
-
   let query2 = "SELECT department.dept_name FROM department";
-
-  connection.query(query1, function (err, res) {
+  db.query(query1, function (err, res) {
     if (err) throw err;
     console.table(res);
-
-    connection.query(query2, function (err, res) {
+    db.query(query2, function (err, res) {
       if (err) throw err;
       let departmentList = res;
-
       let addRolePrompt = [
         {
           name: "add_role",
@@ -191,19 +189,19 @@ function addRole() {
               const roleId = i + 1;
               departments.push(roleId + ": " + departmentList[i].dept_name);
             }
-            departments.unshift("0: Exit");
+            departments.unshift("0: No");
             return departments;
           },
         },
       ];
 
       inquirer.prompt(addRolePrompt).then(function (answer) {
-        if (answer.select_department == "0: Exit") {
+        if (answer.select_department == "0: No") {
           employeePrompt();
         } else {
           console.log(answer);
           let query = "INSERT INTO roles SET ?";
-          connection.query(
+          db.query(
             query,
             {
               title: answer.add_role,
@@ -220,18 +218,17 @@ function addRole() {
               name: "again",
               type: "list",
               message: "Would you like to add another role?",
-              choices: ["Yes", "Exit"],
+              choices: ["Yes", "No"],
             },
           ];
           inquirer.prompt(addagainPrompt).then(function (answer) {
             let query =
               "SELECT roles.id, roles.title AS roles, roles.salary, department.dept_name FROM roles INNER JOIN department ON department.id = roles.department_id;";
-            connection.query(query, function (err, res) {
+            db.query(query, function (err, res) {
               if (err) throw err;
-
               if (answer.again == "Yes") {
                 addRole();
-              } else if (answer.again == "Exit") {
+              } else if (answer.again == "No") {
                 console.table(res);
                 employeePrompt();
               }
@@ -251,28 +248,26 @@ function addEmployee() {
     "JOIN roles ON roles.id = employees.role_id " +
     "JOIN department ON roles.department_id = department.id " +
     "ORDER BY employees.id;";
-  connection.query(query, function (err, res) {
+  db.query(query, function (err, res) {
     if (err) throw err;
 
     let rolesList = res;
-    connection.query(query2, function (err, res) {
+    db.query(query2, function (err, res) {
       if (err) throw err;
-
       for (i = 0; i < res.length; i++) {
         if (res[i].manager_id == 0) {
           res[i].manager = "None";
-        } else {
-          res[i].manager =
-            res[res[i].manager_id - 1].first_name +
-            " " +
-            res[res[i].manager_id - 1].last_name;
+        // } else {
+        //   res[i].manager =
+        //     res[res[i].manager_id - 1].first_name +
+        //     " " +
+        //     res[res[i].manager_id - 1].last_name;
         }
-        delete res[i].manager_id;
+         delete res[i].manager_id;
       }
       console.table(res);
 
       let managerList = res;
-
       let addEmpPrompt = [
         {
           name: "first_name",
@@ -296,7 +291,7 @@ function addEmployee() {
               roles.push(roleId + ": " + rolesList[i].title);
             }
 
-            roles.unshift("0: Exit");
+            roles.unshift("0: No");
             return roles;
           },
         },
@@ -320,81 +315,77 @@ function addEmployee() {
               );
             }
             managers.unshift("0: None");
-            managers.unshift("E: Exit");
+            managers.unshift("E: No");
             return managers;
           },
 
           when: function (answers) {
-            return answers.select_role !== "0: Exit";
+            return answers.select_role !== "0: No";
           },
         },
       ];
 
-      inquirer
-        .prompt(addEmpPrompt)
+      inquirer.prompt(addEmpPrompt).then(function (answer) {
+        if (
+          answer.select_role == "0: No" ||
+          answer.select_manager == "E: No"
+        ) {
+          employeePrompt();
+        } else {
+          console.log(answer);
+          let query = "INSERT INTO employees SET ?";
+          db.query(
+            query,
+            {
+              first_name: answer.first_name,
+              last_name: answer.last_name,
+              role_id: parseInt(answer.select_role.split(":")[0]),
+              manager_id: parseInt(answer.select_manager.split(":")[0]),
+            },
+            function (err, res) {
+              if (err) throw err;
+            }
+          );
 
-        .then(function (answer) {
-          if (
-            answer.select_role == "0: Exit" ||
-            answer.select_manager == "E: Exit"
-          ) {
-            employeePrompt();
-          } else {
-            console.log(answer);
-            let query = "INSERT INTO employees SET ?";
-            connection.query(
-              query,
-              {
-                first_name: answer.first_name,
-                last_name: answer.last_name,
-                role_id: parseInt(answer.select_role.split(":")[0]),
-                manager_id: parseInt(answer.select_manager.split(":")[0]),
-              },
-              function (err, res) {
-                if (err) throw err;
-              }
-            );
+          let addagainPrompt = [
+            {
+              name: "again",
+              type: "list",
+              message: "Would you like to add another employee?",
+              choices: ["Yes", "No"],
+            },
+          ];
 
-            let addagainPrompt = [
-              {
-                name: "again",
-                type: "list",
-                message: "Would you like to add another employee?",
-                choices: ["Yes", "Exit"],
-              },
-            ];
-
-            inquirer.prompt(addagainPrompt).then(function (answer) {
-              let query =
-                "SELECT employees.first_name, employees.last_name, roles.title, roles.salary, department.dept_name, employees.manager_id " +
-                "FROM employees " +
-                "JOIN roles ON roles.id = employees.role_id " +
-                "JOIN department ON roles.department_id = department.id " +
-                "ORDER BY employees.id;";
-              connection.query(query, function (err, res) {
-                if (err) throw err;
-
-                if (answer.again == "Yes") {
-                  addEmployee();
-                } else if (answer.again == "Exit") {
-                  for (i = 0; i < res.length; i++) {
-                    if (res[i].manager_id == 0) {
-                      res[i].manager = "None";
-                    } else {
-                      res[i].manager =
-                        res[res[i].manager_id - 1].first_name +
-                        " " +
-                        res[res[i].manager_id - 1].last_name;
-                    }
-                    delete res[i].manager_id;
+          inquirer.prompt(addagainPrompt).then(function (answer) {
+            let query =
+              "SELECT employees.first_name, employees.last_name, roles.title, roles.salary, department.dept_name, employees.manager_id " +
+              "FROM employees " +
+              "JOIN roles ON roles.id = employees.role_id " +
+              "JOIN department ON roles.department_id = department.id " +
+              "ORDER BY employees.id;";
+            db.query(query, function (err, res) {
+              if (err) throw err;
+              if (answer.again == "Yes") {
+                addEmployee();
+              } else if (answer.again == "No") {
+                for (i = 0; i < res.length; i++) {
+                  if (res[i].manager_id == 0) {
+                    res[i].manager = "None";
+                  // } else {
+                  //   res[i].manager =
+                  //     res[res[i].manager_id - 1].first_name +
+                  //     " " +
+                  //     res[res[i].manager_id - 1].last_name;
                   }
-                  console.table(res);
-                  employeePrompt();
+                  delete res[i].manager_id;
                 }
-              });
+                console.table(res);
+                employeePrompt();
+              }
             });
-          }
-        });
+          });
+        }
+      });
     });
   });
 }
@@ -407,30 +398,25 @@ function editEmployee() {
     "JOIN roles ON roles.id = employees.role_id " +
     "JOIN department ON roles.department_id = department.id " +
     "ORDER BY employees.id;";
-  connection.query(query, function (err, res) {
+  db.query(query, function (err, res) {
     if (err) throw err;
-
     let rolesList = res;
-
-    connection.query(query2, function (err, res) {
+    db.query(query2, function (err, res) {
       if (err) throw err;
-
       for (i = 0; i < res.length; i++) {
         if (res[i].manager_id == 0) {
           res[i].manager = "None";
-        } else {
-          res[i].manager =
-            res[res[i].manager_id - 1].first_name +
-            " " +
-            res[res[i].manager_id - 1].last_name;
+        // } else {
+        //   res[i].manager =
+        //     res[res[i].manager_id - 1].first_name +
+        //     " " +
+        //     res[res[i].manager_id - 1].last_name;
         }
         delete res[i].manager_id;
       }
 
       console.table(res);
-
       let employeeList = res;
-
       let addEmpPrompt = [
         {
           name: "select_employee",
@@ -451,14 +437,14 @@ function editEmployee() {
                   employeeList[i].last_name
               );
             }
-            employees.unshift("0: Exit");
+            employees.unshift("0: No");
             return employees;
           },
         },
       ];
 
       inquirer.prompt(addEmpPrompt).then(function (answer) {
-        if (answer.select_employee == "0: Exit") {
+        if (answer.select_employee == "0: No") {
           employeePrompt();
         } else {
           let empSelect = answer.select_employee.split(":")[0];
@@ -475,7 +461,7 @@ function editEmployee() {
                   const roleId = i + 1;
                   roles.push(roleId + ": " + rolesList[i].title);
                 }
-                roles.unshift("0: Exit");
+                roles.unshift("0: No");
                 return roles;
               },
             },
@@ -502,26 +488,26 @@ function editEmployee() {
                   }
                 }
                 managers.unshift("0: None");
-                managers.unshift("E: Exit");
+                managers.unshift("E: No");
                 return managers;
               },
 
               when: function (answers) {
-                return answers.select_role !== "0: Exit";
+                return answers.select_role !== "0: No";
               },
             },
           ];
           inquirer.prompt(empPropPrompt).then(function (answer) {
             if (
-              answer.select_role == "0: Exit" ||
-              answer.select_manager == "E: Exit"
+              answer.select_role == "0: No" ||
+              answer.select_manager == "E: No"
             ) {
               employeePrompt();
             } else {
               console.log(answer);
               let query =
                 "UPDATE employees SET ? WHERE employees.id = " + empSelect;
-              connection.query(
+              db.query(
                 query,
                 {
                   role_id: parseInt(answer.select_role.split(":")[0]),
@@ -537,7 +523,7 @@ function editEmployee() {
                   name: "again",
                   type: "list",
                   message: "Would you like to add another employee?",
-                  choices: ["Yes", "Exit"],
+                  choices: ["Yes", "No"],
                 },
               ];
 
@@ -548,20 +534,19 @@ function editEmployee() {
                   "JOIN roles ON roles.id = employees.role_id " +
                   "JOIN department ON roles.department_id = department.id " +
                   "ORDER BY employees.id;";
-                connection.query(query, function (err, res) {
+                db.query(query, function (err, res) {
                   if (err) throw err;
-
                   if (answer.again == "Yes") {
                     editEmployee();
-                  } else if (answer.again == "Exit") {
+                  } else if (answer.again == "No") {
                     for (i = 0; i < res.length; i++) {
                       if (res[i].manager_id == 0) {
                         res[i].manager = "None";
-                      } else {
-                        res[i].manager =
-                          res[res[i].manager_id - 1].first_name +
-                          " " +
-                          res[res[i].manager_id - 1].last_name;
+                      // } else {
+                      //   res[i].manager =
+                      //     res[res[i].manager_id - 1].first_name +
+                      //     " " +
+                      //     res[res[i].manager_id - 1].last_name;
                       }
                       delete res[i].manager_id;
                     }
@@ -579,6 +564,6 @@ function editEmployee() {
 }
 
 function exit() {
-  connection.end();
+  db.end();
   console.log("Disconnected");
 }

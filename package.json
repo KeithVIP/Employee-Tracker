@@ -4,14 +4,22 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "jest",
+    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KeithVIP/employee-tracker.git"
   },
   "author": "Keith Yanosy",
   "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KeithVIP/employee-tracker/issues"
+  },
+  "homepage": "https://github.com/KeithVIP/employee-tracker#readme",
   "dependencies": {
-    "console.table": "^0.10.0",
+    "2": "^3.0.0",
     "inquirer": "^8.2.4",
-    "mysql2": "^2.3.3"
+    "mysql": "^2.18.1"
   }
 }
